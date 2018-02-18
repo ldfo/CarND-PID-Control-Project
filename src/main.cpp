@@ -68,12 +68,9 @@ int main()
           pid.UpdateError(cte);
           // Steer Value
           steer_value = - pid.TotalError();
-          if (steer_value > 1.0) {
-            steer_value = 1.0;
-          }
-          if (steer_value < -1.0) {
-            steer_value = -1.0;
-          }
+          steer_value = std::max(steer_value, -1.0);
+          steer_value = std::min(steer_value, 1.0);
+
           // Throttle
           double throttle = 1.0;
           if(speed > max_speed) {
