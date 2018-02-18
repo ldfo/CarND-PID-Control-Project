@@ -35,7 +35,7 @@ int main()
 
   PID pid;
   // TODO: Initialize the pid variable.
-  pid.Init(0.185, 0.0015, 1.85);
+   pid.Init(0.195, 0.001, 2.1);
 
   h.onMessage([&pid](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
@@ -43,9 +43,9 @@ int main()
     // The 2 signifies a websocket event
 
     // Define speed and cte limits
-    double min_speed = 35.0;
-    double max_speed = 55.0;
-    double cte_limit = 1.5;
+    double min_speed = 30.0;
+    double max_speed = 50.0;
+    double cte_limit = 1.4;
 
     if (length && length > 2 && data[0] == '4' && data[1] == '2')
     {
@@ -82,7 +82,7 @@ int main()
           } else if(speed < min_speed) {
             throttle = 1.0;
           } else if(std::abs(cte) > cte_limit) {
-            throttle = -1.0 * std::abs(steer_value);
+            throttle = -0.8;
           }
 
           // DEBUG
