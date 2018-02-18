@@ -3,6 +3,7 @@
 #include "json.hpp"
 #include "PID.h"
 #include <math.h>
+#include <algorithm>
 
 // for convenience
 using json = nlohmann::json;
@@ -34,11 +35,18 @@ int main()
 
   PID pid;
   // TODO: Initialize the pid variable.
+  pid.Init(0.185, 0.0015, 1.85);
 
   h.onMessage([&pid](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
     // The 2 signifies a websocket event
+
+    // Define speed and cte limits
+    double min_speed = 35.0;
+    double max_speed = 55.0;
+    double cte_limit = 1.5;
+
     if (length && length > 2 && data[0] == '4' && data[1] == '2')
     {
       auto s = hasData(std::string(data).substr(0, length));
@@ -57,13 +65,32 @@ int main()
           * NOTE: Feel free to play around with the throttle and speed. Maybe use
           * another PID controller to control the speed!
           */
-          
+          // Update Error
+          pid.UpdateError(cte);
+          // Steer Value
+          steer_value = - pid.TotalError() * 30.0 / std::max(speed,1.0);
+          if (steer_value > 1.0) {
+            steer_value = 1.0;
+          }
+          if (steer_value < -1.0) {
+            steer_value = -1.0;
+          }
+          // Throttle
+          double throttle = 1.0;
+          if(speed > max_speed) {
+            throttle = 0.0;
+          } else if(speed < min_speed) {
+            throttle = 1.0;
+          } else if(std::abs(cte) > cte_limit) {
+            throttle = -1.0 * std::abs(steer_value);
+          }
+
           // DEBUG
           std::cout << "CTE: " << cte << " Steering Value: " << steer_value << std::endl;
 
           json msgJson;
           msgJson["steering_angle"] = steer_value;
-          msgJson["throttle"] = 0.3;
+          msgJson["throttle"] = throttle;
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";
           std::cout << msg << std::endl;
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
